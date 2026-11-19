@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>AETHER VANGUARD // 10-LEVEL WARFARE</title>
+  <title>AETHER POLARITY // CHRONO APEX</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
     html, body {
       width: 100%; height: 100%;
-      background: #03040a;
+      background: #020308;
       overflow: hidden;
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       touch-action: none;
@@ -37,19 +37,22 @@ resize();
 
 // --- 10 LEVELS CONFIGURATION ---
 const LEVELS = [
-  { num: 1,  name: 'NEON SECTOR',      primary: '#00f5d4', enemy: '#ff0055', bg1: '#0b132b', bg2: '#03040a', target: 18, bossHp: 45 },
-  { num: 2,  name: 'SOLAR ASTEROIDS',  primary: '#ffd166', enemy: '#f77f00', bg1: '#241405', bg2: '#050301', target: 24, bossHp: 65 },
-  { num: 3,  name: 'CRIMSON NEBULA',   primary: '#ff4d6d', enemy: '#ffbe0b', bg1: '#290610', bg2: '#060103', target: 30, bossHp: 85 },
-  { num: 4,  name: 'EMERALD GRID',     primary: '#06d6a0', enemy: '#ff006e', bg1: '#05241b', bg2: '#010604', target: 36, bossHp: 110 },
-  { num: 5,  name: 'VOID CITADEL',     primary: '#c77dff', enemy: '#00bbf9', bg1: '#1a082e', bg2: '#040108', target: 42, bossHp: 135 },
-  { num: 6,  name: 'COBALT STORM',     primary: '#3a86ff', enemy: '#ffbe0b', bg1: '#071736', bg2: '#010308', target: 48, bossHp: 160 },
-  { num: 7,  name: 'PLASMA CORE',      primary: '#ff70a6', enemy: '#70d6ff', bg1: '#2b091c', bg2: '#070104', target: 55, bossHp: 190 },
-  { num: 8,  name: 'BIO REACTOR',      primary: '#b5e48c', enemy: '#ff4d6d', bg1: '#162607', bg2: '#030601', target: 62, bossHp: 225 },
-  { num: 9,  name: 'OMEGA FORTRESS',   primary: '#f72585', enemy: '#4cc9f0', bg1: '#26051d', bg2: '#060104', target: 70, bossHp: 260 },
-  { num: 10, name: 'SINGULARITY GOD',  primary: '#ffffff', enemy: '#ffd166', bg1: '#241f14', bg2: '#050402', target: 80, bossHp: 320 }
+  { num: 1,  name: 'POLARITY RIFT',    bg1: '#091224', bg2: '#020308', target: 16, bossHp: 60,  unlockCost: 0 },
+  { num: 2,  name: 'ASTEROID BELT',    bg1: '#1f1306', bg2: '#040201', target: 22, bossHp: 85,  unlockCost: 30 },
+  { num: 3,  name: 'CRIMSON GATE',     bg1: '#240610', bg2: '#050102', target: 28, bossHp: 115, unlockCost: 60 },
+  { num: 4,  name: 'GRAVITY WELL',     bg1: '#140826', bg2: '#030106', target: 34, bossHp: 150, unlockCost: 100 },
+  { num: 5,  name: 'SOLAR ECLIPSE',    bg1: '#261805', bg2: '#050301', target: 40, bossHp: 190, unlockCost: 150 },
+  { num: 6,  name: 'QUANTUM STORM',    bg1: '#061a2e', bg2: '#010408', target: 46, bossHp: 235, unlockCost: 210 },
+  { num: 7,  name: 'VOID SINGULARITY', bg1: '#1d0729', bg2: '#040107', target: 52, bossHp: 285, unlockCost: 280 },
+  { num: 8,  name: 'PLASMA FORGE',     bg1: '#290915', bg2: '#060103', target: 60, bossHp: 340, unlockCost: 360 },
+  { num: 9,  name: 'OMEGA NEXUS',      bg1: '#07241d', bg2: '#010604', target: 68, bossHp: 410, unlockCost: 450 },
+  { num: 10, name: 'CHRONO OVERLORD',  bg1: '#211c10', bg2: '#040301', target: 78, bossHp: 500, unlockCost: 550 }
 ];
 
-// --- SYNTH AUDIO ENGINE ---
+const PHASE_CYAN = '#00f5d4';
+const PHASE_RED  = '#ff0055';
+
+// --- PROCEDURAL CYBERPUNK SYNTH & SFX ENGINE ---
 const AudioEngine = (() => {
   let actx = null;
   let beatTimer = 0;
@@ -77,80 +80,138 @@ const AudioEngine = (() => {
     osc.stop(now + dur);
   }
 
-  function tickMusic(dt, active, lvl) {
+  function tickMusic(dt, active, lvl, overdrive) {
     if (!actx || !active) return;
     beatTimer -= dt;
     if (beatTimer <= 0) {
-      beatTimer = Math.max(0.11, 0.18 - lvl * 0.005);
-      const f = bass[step % bass.length] * (1 + (lvl - 1) * 0.025);
+      beatTimer = Math.max(0.105, (overdrive ? 0.135 : 0.18) - lvl * 0.005);
+      const f = bass[step % bass.length] * (1 + (lvl - 1) * 0.025) * (overdrive ? 1.25 : 1);
       tone('sawtooth', f, f * 0.85, 0.12, 0.045);
-      if (step % 4 === 0) tone('sine', 110, 30, 0.14, 0.1);
+      if (step % 4 === 0) tone('sine', 115, 30, 0.14, 0.1);
       step++;
     }
   }
 
   return {
     init, tickMusic,
-    shoot: (pwr) => tone('sawtooth', 750 + pwr * 120, 260, 0.05, 0.045),
-    hit: () => tone('triangle', 320, 140, 0.04, 0.06),
-    kill: () => { tone('sine', 520, 980, 0.12, 0.12); tone('triangle', 140, 40, 0.18, 0.14); },
-    powerup: () => { tone('sine', 520, 1040, 0.14, 0.14); setTimeout(() => tone('sine', 780, 1560, 0.18, 0.14), 80); },
-    nova: () => { tone('sawtooth', 260, 30, 0.6, 0.25); tone('sine', 880, 110, 0.5, 0.2); },
-    levelClear: () => {
-      [440, 554, 659, 880].forEach((n, idx) => setTimeout(() => tone('triangle', n, n * 1.02, 0.22, 0.15), idx * 90));
+    phase: (isCyan) => tone('triangle', isCyan ? 420 : 680, isCyan ? 840 : 340, 0.09, 0.14),
+    absorb: () => tone('sine', 960, 1440, 0.07, 0.09),
+    coin: () => tone('sine', 1150, 1750, 0.08, 0.1),
+    buy: () => { tone('triangle', 520, 1040, 0.12, 0.15); setTimeout(() => tone('triangle', 780, 1560, 0.15, 0.15), 70); },
+    error: () => tone('sawtooth', 160, 90, 0.12, 0.12),
+    shoot: (pwr) => tone('sawtooth', 750 + pwr * 110, 260, 0.045, 0.04),
+    hit: () => tone('triangle', 320, 140, 0.04, 0.05),
+    nearMiss: () => tone('sine', 980, 1520, 0.11, 0.1),
+    kill: (combo) => {
+      const p = Math.min(1250, 500 + combo * 45);
+      tone('sine', p, p * 1.65, 0.12, 0.12);
+      tone('triangle', 140, 40, 0.18, 0.14);
     },
+    nova: () => { tone('sawtooth', 260, 30, 0.6, 0.25); tone('sine', 880, 110, 0.5, 0.2); },
+    levelClear: () => [440, 554, 659, 880].forEach((n, idx) => setTimeout(() => tone('triangle', n, n * 1.02, 0.22, 0.15), idx * 90)),
     damage: () => tone('sawtooth', 180, 28, 0.45, 0.24)
   };
 })();
 
+// --- PERSISTENT COIN STORAGE VAULT ---
+const VAULT_KEY = 'aether_chrono_apex_vault_v1';
+function loadVault() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(VAULT_KEY));
+    if (raw && typeof raw === 'object') {
+      return {
+        coins: Number(raw.coins || 0),
+        totalEarned: Number(raw.totalEarned || 0),
+        unlockedLevel: Number(raw.unlockedLevel || 1),
+        bestScore: Number(raw.bestScore || 0),
+        shop: raw.shop || { cannon: 1, magnet: 1, armor: 1, nova: 1 }
+      };
+    }
+  } catch (e) {}
+  return {
+    coins: 0,
+    totalEarned: 0,
+    unlockedLevel: 1,
+    bestScore: 0,
+    shop: { cannon: 1, magnet: 1, armor: 1, nova: 1 }
+  };
+}
+
+let vault = loadVault();
+function saveVault() {
+  localStorage.setItem(VAULT_KEY, JSON.stringify(vault));
+}
+function addCoins(amount) {
+  vault.coins += amount;
+  vault.totalEarned += amount;
+  saveVault();
+}
+
 // --- GAME STATE ---
 let state = 'MENU'; // MENU, PLAY, LEVELCLEAR, OVER, VICTORY
-let unlockedLevel = Number(localStorage.getItem('av_unlocked') || 1);
 let currentLevel = 1;
 let score = 0;
-let bestScore = Number(localStorage.getItem('av_best') || 0);
+let combo = 1;
+let maxCombo = 1;
+let comboTimer = 0;
 let levelKills = 0;
 let time = 0;
 let shake = 0;
+let hitStop = 0;
+let slowMoTimer = 0;
+let glitchTimer = 0;
 let flashAlpha = 0;
 let flashColor = '#ffffff';
 let lastTap = 0;
+let statusMsg = '';
+let statusTimer = 0;
+let copiedTimer = 0;
 
-// Player Starfighter
 const ship = {
   x: 0, y: 0,
   tx: 0, ty: 0,
+  phase: 'CYAN',
   hp: 100,
   maxHp: 100,
-  weaponLevel: 1, // 1 to 4
-  novaCharges: 2,
+  novaCharges: 1,
   fireTimer: 0,
+  wingmanTimer: 0,
   invuln: 0,
-  tilt: 0
+  tilt: 0,
+  trail: []
 };
 
 let stars = [];
 let bullets = [];
 let enemyBullets = [];
 let enemies = [];
-let pickups = [];
+let obstacles = [];
+let coinDrops = [];
 let particles = [];
 let shockwaves = [];
 let floatTexts = [];
 let boss = null;
 let levelBtns = [];
+let shopBtns = [];
+let phaseBtnRect = { x: 0, y: 0, w: 0, h: 0 };
+let shareBtnRect = { x: 0, y: 0, w: 0, h: 0 };
 
-for (let i = 0; i < 120; i++) {
+for (let i = 0; i < 130; i++) {
   stars.push({
     x: Math.random() * 2000,
     y: Math.random() * 2000,
-    speed: 60 + Math.random() * 240,
+    speed: 65 + Math.random() * 250,
     size: 1 + Math.random() * 2.2
   });
 }
 
 function getLvl() {
   return LEVELS[Math.min(LEVELS.length - 1, currentLevel - 1)];
+}
+
+function showStatus(msg) {
+  statusMsg = msg;
+  statusTimer = 2.2;
 }
 
 function addFloat(x, y, text, color) {
@@ -161,7 +222,7 @@ function addWave(x, y, maxR, color) {
   shockwaves.push({ x, y, r: 10, maxR, color, life: 1 });
 }
 
-function spawnExplosion(x, y, color, count = 22, speed = 300) {
+function spawnExplosion(x, y, color, count = 20, speed = 290) {
   for (let i = 0; i < count; i++) {
     const a = Math.random() * Math.PI * 2;
     const s = (0.2 + Math.random() * 0.85) * speed;
@@ -177,28 +238,59 @@ function spawnExplosion(x, y, color, count = 22, speed = 300) {
   }
 }
 
+function spawnCoins(x, y, count) {
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const spd = 60 + Math.random() * 140;
+    coinDrops.push({
+      x, y,
+      vx: Math.cos(a) * spd,
+      vy: Math.sin(a) * spd - 40,
+      spin: Math.random() * 6
+    });
+  }
+}
+
+function togglePhase() {
+  if (state !== 'PLAY') return;
+  ship.phase = ship.phase === 'CYAN' ? 'RED' : 'CYAN';
+  const col = ship.phase === 'CYAN' ? PHASE_CYAN : PHASE_RED;
+  addWave(ship.x, ship.y, 75, col);
+  AudioEngine.phase(ship.phase === 'CYAN');
+}
+
 function triggerNovaBomb() {
   if (state !== 'PLAY' || ship.novaCharges <= 0) return;
   ship.novaCharges--;
   shake = 28;
+  glitchTimer = 0.25;
   flashAlpha = 0.65;
-  flashColor = getLvl().primary;
-  addWave(ship.x, ship.y, Math.max(W, H), getLvl().primary);
-  addFloat(ship.x, ship.y - 40, '💥 NOVA SHOCKWAVE!', '#ffffff');
+  flashColor = '#ffd166';
+  addWave(ship.x, ship.y, Math.max(W, H), '#ffd166');
+  addFloat(ship.x, ship.y - 40, '💥 CHRONO NOVA!', '#ffd166');
   AudioEngine.nova();
 
   enemyBullets = [];
+  obstacles = obstacles.filter(o => o.type === 'BLACKHOLE');
   for (let i = enemies.length - 1; i >= 0; i--) {
     const e = enemies[i];
     spawnExplosion(e.x, e.y, e.color, 18, 280);
+    spawnCoins(e.x, e.y, 2);
     score += 100 * currentLevel;
     levelKills++;
     enemies.splice(i, 1);
   }
   if (boss) {
-    boss.hp -= 35;
+    boss.hp -= 45;
     spawnExplosion(boss.x, boss.y, '#ffd166', 35, 350);
   }
+}
+
+function copyScoreCard() {
+  const text = `🚀 AETHER POLARITY | Level ${currentLevel}/10 (${getLvl().name})\n🏆 Score: ${score.toLocaleString()} | Max Combo: ${maxCombo}x ⚡ | Vault: ◈ ${vault.coins}\nPlay now 👉 ${window.location.href}`;
+  if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+  copiedTimer = 2.5;
+  AudioEngine.coin();
 }
 
 function startLevel(lvlNum) {
@@ -206,10 +298,14 @@ function startLevel(lvlNum) {
   currentLevel = lvlNum;
   state = 'PLAY';
   levelKills = 0;
+  combo = 1;
+  comboTimer = 0;
+  slowMoTimer = 0;
   bullets = [];
   enemyBullets = [];
   enemies = [];
-  pickups = [];
+  obstacles = [];
+  coinDrops = [];
   particles = [];
   shockwaves = [];
   floatTexts = [];
@@ -219,26 +315,32 @@ function startLevel(lvlNum) {
   ship.y = H * 0.78;
   ship.tx = ship.x;
   ship.ty = ship.y;
-  ship.hp = 100;
+  ship.phase = 'CYAN';
+  ship.maxHp = 80 + vault.shop.armor * 20;
+  ship.hp = ship.maxHp;
+  ship.novaCharges = vault.shop.nova;
   ship.invuln = 1.2;
+  ship.trail = [];
   if (lvlNum === 1) {
     score = 0;
-    ship.weaponLevel = 1;
-    ship.novaCharges = 2;
-  } else {
-    ship.novaCharges = Math.min(3, ship.novaCharges + 1);
+    maxCombo = 1;
   }
 
   flashAlpha = 0.35;
-  flashColor = getLvl().primary;
-  addFloat(W / 2, H * 0.45, `LEVEL ${currentLevel}: ${getLvl().name}`, getLvl().primary);
+  flashColor = PHASE_CYAN;
+  addFloat(W / 2, H * 0.45, `LEVEL ${currentLevel}: ${getLvl().name}`, PHASE_CYAN);
 }
 
 // --- CONTROLS ---
 function updateTarget(clientX, clientY) {
   ship.tx = Math.max(24, Math.min(W - 24, clientX));
-  ship.ty = Math.max(60, Math.min(H - 30, clientY));
+  ship.ty = Math.max(65, Math.min(H - 65, clientY));
 }
+
+window.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  if (state === 'PLAY') togglePhase();
+});
 
 window.addEventListener('pointermove', (e) => {
   if (state === 'PLAY') updateTarget(e.clientX, e.clientY);
@@ -246,16 +348,55 @@ window.addEventListener('pointermove', (e) => {
 
 window.addEventListener('pointerdown', (e) => {
   e.preventDefault();
+  AudioEngine.init();
+  if (e.button === 2 && state === 'PLAY') {
+    togglePhase();
+    return;
+  }
+
   const mx = e.clientX, my = e.clientY;
 
   if (state === 'MENU') {
-    for (const b of levelBtns) {
-      if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
-        if (b.lvl <= unlockedLevel) startLevel(b.lvl);
+    for (const sb of shopBtns) {
+      if (mx >= sb.x && mx <= sb.x + sb.w && my >= sb.y && my <= sb.y + sb.h) {
+        if (sb.lvl >= sb.max) {
+          showStatus('ALREADY AT MAX LEVEL!');
+        } else if (vault.coins >= sb.cost) {
+          vault.coins -= sb.cost;
+          vault.shop[sb.key]++;
+          saveVault();
+          AudioEngine.buy();
+          showStatus(`${sb.label} UPGRADED TO LEVEL ${vault.shop[sb.key]}!`);
+        } else {
+          AudioEngine.error();
+          showStatus(`NEED ${sb.cost - vault.coins} MORE COINS IN VAULT!`);
+        }
         return;
       }
     }
-    startLevel(1);
+
+    for (const b of levelBtns) {
+      if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+        if (b.lvl <= vault.unlockedLevel) {
+          startLevel(b.lvl);
+        } else if (b.lvl === vault.unlockedLevel + 1) {
+          if (vault.coins >= b.cost) {
+            vault.coins -= b.cost;
+            vault.unlockedLevel = b.lvl;
+            saveVault();
+            AudioEngine.buy();
+            showStatus(`LEVEL ${b.lvl} UNLOCKED WITH COINS!`);
+          } else {
+            AudioEngine.error();
+            showStatus(`NEED ${b.cost} COINS TO UNLOCK LEVEL ${b.lvl}!`);
+          }
+        } else {
+          AudioEngine.error();
+          showStatus(`UNLOCK LEVEL ${vault.unlockedLevel + 1} FIRST!`);
+        }
+        return;
+      }
+    }
     return;
   }
 
@@ -265,14 +406,25 @@ window.addEventListener('pointerdown', (e) => {
   }
 
   if (state === 'OVER' || state === 'VICTORY') {
+    const sb = shareBtnRect;
+    if (mx >= sb.x && mx <= sb.x + sb.w && my >= sb.y && my <= sb.y + sb.h) {
+      copyScoreCard();
+      return;
+    }
     state = 'MENU';
     return;
   }
 
   if (state === 'PLAY') {
+    const pb = phaseBtnRect;
+    if (mx >= pb.x && mx <= pb.x + pb.w && my >= pb.y && my <= pb.y + pb.h) {
+      togglePhase();
+      return;
+    }
+
     updateTarget(mx, my);
     const now = performance.now();
-    if (now - lastTap < 260) triggerNovaBomb();
+    if (now - lastTap < 250) triggerNovaBomb();
     lastTap = now;
   }
 });
@@ -280,7 +432,10 @@ window.addEventListener('pointerdown', (e) => {
 const keys = {};
 window.addEventListener('keydown', (e) => {
   keys[e.code] = true;
-  if (e.code === 'Space' || e.code === 'ShiftLeft') {
+  if (e.code === 'KeyE' || e.code === 'KeyQ' || e.code === 'ShiftLeft') {
+    if (state === 'PLAY') togglePhase();
+  }
+  if (e.code === 'Space') {
     if (state === 'PLAY') triggerNovaBomb();
     else if (state === 'LEVELCLEAR') startLevel(currentLevel + 1);
     else if (state === 'OVER' || state === 'VICTORY') state = 'MENU';
@@ -290,39 +445,69 @@ window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
 // --- SPAWNERS ---
 let spawnTimer = 0;
+let obstacleTimer = 2.2;
 
 function spawnEnemyWave() {
-  const lvl = getLvl();
+  const isCyan = Math.random() > 0.5;
   const r = Math.random();
   let type = 'interceptor';
   let hp = 1 + Math.floor(currentLevel / 3);
-  let speed = 150 + currentLevel * 16;
+  let speed = 155 + currentLevel * 15;
   let size = 16;
-  let color = lvl.enemy;
 
-  if (r < 0.28 && currentLevel >= 2) {
+  if (r < 0.32 && currentLevel >= 2) {
     type = 'gunship';
     hp = 3 + Math.floor(currentLevel / 2);
     speed = 105 + currentLevel * 10;
     size = 22;
-    color = '#9b5de5';
-  } else if (r < 0.5 && currentLevel >= 3) {
-    type = 'dasher';
-    hp = 1;
-    speed = 260 + currentLevel * 20;
-    size = 14;
-    color = '#ffbe0b';
   }
 
   enemies.push({
     x: 40 + Math.random() * (W - 80),
     y: -30,
-    vx: (Math.random() - 0.5) * 90,
+    vx: (Math.random() - 0.5) * 95,
     vy: speed,
-    hp, maxHp: hp,
-    size, color, type,
-    shootTimer: 1 + Math.random() * 1.5
+    hp, size, type,
+    phase: isCyan ? 'CYAN' : 'RED',
+    color: isCyan ? PHASE_CYAN : PHASE_RED,
+    shootTimer: 1.1 + Math.random() * 1.4,
+    grazed: false
   });
+}
+
+function spawnUniqueObstacle() {
+  const r = Math.random();
+  if (r < 0.42) {
+    const isCyan = Math.random() > 0.5;
+    obstacles.push({
+      type: 'GATE',
+      y: -20,
+      vy: 145 + currentLevel * 10,
+      phase: isCyan ? 'CYAN' : 'RED',
+      color: isCyan ? PHASE_CYAN : PHASE_RED,
+      absorbed: false
+    });
+  } else if (r < 0.72 && currentLevel >= 2) {
+    obstacles.push({
+      type: 'BLACKHOLE',
+      x: 80 + Math.random() * (W - 160),
+      y: -50,
+      vy: 85 + currentLevel * 6,
+      radius: 32,
+      pullRadius: 195
+    });
+  } else {
+    obstacles.push({
+      type: 'ASTEROID',
+      x: 45 + Math.random() * (W - 90),
+      y: -35,
+      vx: (Math.random() - 0.5) * 70,
+      vy: 120 + currentLevel * 10,
+      hp: 3 + currentLevel,
+      radius: 24,
+      rot: 0
+    });
+  }
 }
 
 function spawnBoss() {
@@ -330,32 +515,46 @@ function spawnBoss() {
   boss = {
     x: W / 2,
     y: -90,
-    targetY: Math.min(150, H * 0.22),
+    targetY: Math.min(145, H * 0.21),
     hp: lvl.bossHp,
     maxHp: lvl.bossHp,
     dir: 1,
     shootTimer: 1.0,
     pattern: 0
   };
-  shake = 20;
-  flashAlpha = 0.4;
-  flashColor = '#ff0055';
-  addFloat(W / 2, H * 0.4, `⚠ LEVEL ${currentLevel} DREADNOUGHT BOSS ⚠`, '#ff0055');
+  shake = 22;
+  glitchTimer = 0.35;
+  flashAlpha = 0.42;
+  flashColor = PHASE_RED;
+  addFloat(W / 2, H * 0.4, `⚠ LEVEL ${currentLevel} CHRONO BOSS ⚠`, '#ffd166');
   AudioEngine.nova();
 }
 
 // --- UPDATE ---
 let lastTime = performance.now();
-function update(dt) {
+function update(rawDt) {
+  copiedTimer = Math.max(0, copiedTimer - rawDt);
+  statusTimer = Math.max(0, statusTimer - rawDt);
+
+  if (hitStop > 0) {
+    hitStop -= rawDt;
+    return;
+  }
+
+  slowMoTimer = Math.max(0, slowMoTimer - rawDt);
+  const dt = slowMoTimer > 0 ? rawDt * 0.42 : rawDt;
+
   time += dt;
-  shake *= Math.pow(0.03, dt);
-  flashAlpha = Math.max(0, flashAlpha - dt * 1.8);
+  shake *= Math.pow(0.03, rawDt);
+  glitchTimer = Math.max(0, glitchTimer - rawDt);
+  flashAlpha = Math.max(0, flashAlpha - rawDt * 1.8);
 
-  AudioEngine.tickMusic(dt, state === 'PLAY', currentLevel);
+  const isOverdrive = combo >= 5;
+  AudioEngine.tickMusic(rawDt, state === 'PLAY', currentLevel, isOverdrive);
 
-  // Starfield scroll
   stars.forEach(s => {
-    s.y += s.speed * (state === 'PLAY' ? 1 + currentLevel * 0.12 : 0.6) * dt;
+    const mult = (state === 'PLAY' ? 1 + currentLevel * 0.12 : 0.6) * (isOverdrive ? 1.8 : 1);
+    s.y += s.speed * mult * dt;
     if (s.y > H) { s.y = -5; s.x = Math.random() * W; }
   });
 
@@ -383,14 +582,18 @@ function update(dt) {
 
   const lvl = getLvl();
 
-  // Keyboard movement support
+  if (combo > 1) {
+    comboTimer -= dt;
+    if (comboTimer <= 0) combo = 1;
+  }
+
   const kSpd = 460 * dt;
   if (keys['ArrowLeft'] || keys['KeyA']) ship.tx -= kSpd;
   if (keys['ArrowRight'] || keys['KeyD']) ship.tx += kSpd;
   if (keys['ArrowUp'] || keys['KeyW']) ship.ty -= kSpd;
   if (keys['ArrowDown'] || keys['KeyS']) ship.ty += kSpd;
   ship.tx = Math.max(24, Math.min(W - 24, ship.tx));
-  ship.ty = Math.max(60, Math.min(H - 30, ship.ty));
+  ship.ty = Math.max(65, Math.min(H - 65, ship.ty));
 
   const prevX = ship.x;
   ship.x += (ship.tx - ship.x) * Math.min(1, 16 * dt);
@@ -398,38 +601,54 @@ function update(dt) {
   ship.tilt = Math.max(-0.45, Math.min(0.45, (ship.x - prevX) * 0.04));
   ship.invuln = Math.max(0, ship.invuln - dt);
 
-  // Auto-Fire Weapon Systems (4 Weapon Levels!)
+  const pCol = ship.phase === 'CYAN' ? PHASE_CYAN : PHASE_RED;
+  ship.trail.push({ x: ship.x, y: ship.y + 14, col: isOverdrive ? '#ffd166' : pCol });
+  if (ship.trail.length > 16) ship.trail.shift();
+
+  // Auto-Fire based on Armory Cannon Level
   ship.fireTimer -= dt;
-  const fireInterval = ship.weaponLevel >= 4 ? 0.09 : 0.13;
+  const cLvl = vault.shop.cannon;
+  const fireInterval = (cLvl >= 5 ? 0.085 : 0.125) * (isOverdrive ? 0.78 : 1);
   if (ship.fireTimer <= 0) {
     ship.fireTimer = fireInterval;
-    const col = lvl.primary;
-    if (ship.weaponLevel === 1) {
-      bullets.push({ x: ship.x, y: ship.y - 18, vx: 0, vy: -780, col, dmg: 1 });
-    } else if (ship.weaponLevel === 2) {
-      bullets.push({ x: ship.x - 10, y: ship.y - 14, vx: 0, vy: -800, col, dmg: 1 });
-      bullets.push({ x: ship.x + 10, y: ship.y - 14, vx: 0, vy: -800, col, dmg: 1 });
-    } else if (ship.weaponLevel === 3) {
-      bullets.push({ x: ship.x, y: ship.y - 20, vx: 0, vy: -840, col: '#ffd166', dmg: 1.3 });
-      bullets.push({ x: ship.x - 12, y: ship.y - 12, vx: -110, vy: -800, col, dmg: 1 });
-      bullets.push({ x: ship.x + 12, y: ship.y - 12, vx: 110, vy: -800, col, dmg: 1 });
+    const bCol = isOverdrive ? '#ffd166' : pCol;
+    if (cLvl === 1) {
+      bullets.push({ x: ship.x, y: ship.y - 18, vx: 0, vy: -780, col: bCol, dmg: 1 });
+    } else if (cLvl === 2) {
+      bullets.push({ x: ship.x - 10, y: ship.y - 14, vx: 0, vy: -800, col: bCol, dmg: 1.1 });
+      bullets.push({ x: ship.x + 10, y: ship.y - 14, vx: 0, vy: -800, col: bCol, dmg: 1.1 });
+    } else if (cLvl === 3) {
+      bullets.push({ x: ship.x, y: ship.y - 20, vx: 0, vy: -840, col: bCol, dmg: 1.3 });
+      bullets.push({ x: ship.x - 12, y: ship.y - 12, vx: -105, vy: -800, col: bCol, dmg: 1.1 });
+      bullets.push({ x: ship.x + 12, y: ship.y - 12, vx: 105, vy: -800, col: bCol, dmg: 1.1 });
     } else {
-      [-180, -60, 60, 180].forEach((vx, idx) => {
-        bullets.push({ x: ship.x + (idx - 1.5) * 8, y: ship.y - 16, vx, vy: -880, col: '#ffd166', dmg: 1.4 });
-      });
+      const count = cLvl === 4 ? 4 : 5;
+      for (let i = 0; i < count; i++) {
+        const off = i - (count - 1) / 2;
+        bullets.push({ x: ship.x + off * 7, y: ship.y - 16, vx: off * 85, vy: -880, col: bCol, dmg: 1.35 });
+      }
     }
-    AudioEngine.shoot(ship.weaponLevel);
+    AudioEngine.shoot(cLvl);
   }
 
-  // Update Player Bullets
+  // Wingman Drone Auto-Fire (Unlocks at Cannon Level 3+)
+  if (cLvl >= 3) {
+    ship.wingmanTimer -= dt;
+    if (ship.wingmanTimer <= 0) {
+      ship.wingmanTimer = 0.25;
+      const wx = ship.x + Math.cos(time * 4) * 38;
+      const wy = ship.y + Math.sin(time * 4) * 16;
+      bullets.push({ x: wx, y: wy - 10, vx: 0, vy: -820, col: '#ffd166', dmg: 1.0 });
+    }
+  }
+
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
     b.x += b.vx * dt;
     b.y += b.vy * dt;
-    if (b.y < -20) bullets.splice(i, 1);
+    if (b.y < -20 || b.x < -20 || b.x > W + 20) bullets.splice(i, 1);
   }
 
-  // Spawn Enemies or Boss
   if (!boss) {
     if (levelKills >= lvl.target) {
       spawnBoss();
@@ -437,12 +656,93 @@ function update(dt) {
       spawnTimer -= dt;
       if (spawnTimer <= 0) {
         spawnEnemyWave();
-        spawnTimer = Math.max(0.28, 0.85 - currentLevel * 0.05);
+        spawnTimer = Math.max(0.32, 0.88 - currentLevel * 0.05);
+      }
+      obstacleTimer -= dt;
+      if (obstacleTimer <= 0) {
+        spawnUniqueObstacle();
+        obstacleTimer = Math.max(2.1, 3.8 - currentLevel * 0.16);
       }
     }
   }
 
-  // Update Enemies
+  for (let i = obstacles.length - 1; i >= 0; i--) {
+    const o = obstacles[i];
+    o.y += o.vy * dt;
+
+    if (o.type === 'GATE') {
+      if (!o.absorbed && Math.abs(ship.y - o.y) < 14) {
+        if (ship.phase === o.phase) {
+          o.absorbed = true;
+          addCoins(3);
+          combo = Math.min(12, combo + 1);
+          maxCombo = Math.max(maxCombo, combo);
+          comboTimer = 3.5;
+          score += 200 * combo;
+          addWave(ship.x, ship.y, 90, o.color);
+          addFloat(ship.x, ship.y - 24, `VAULT +3 ◈ (${combo}x)`, o.color);
+          AudioEngine.absorb();
+        } else if (ship.invuln <= 0) {
+          o.absorbed = true;
+          damagePlayer(25);
+        }
+      }
+      if (o.y > H + 30) obstacles.splice(i, 1);
+    } else if (o.type === 'BLACKHOLE') {
+      const dx = o.x - ship.x;
+      const dy = o.y - ship.y;
+      const dist = Math.hypot(dx, dy);
+      if (dist < o.pullRadius && dist > 5) {
+        const pull = (1 - dist / o.pullRadius) * 235 * dt;
+        ship.tx += (dx / dist) * pull;
+        ship.ty += (dy / dist) * pull;
+      }
+      bullets.forEach(b => {
+        const bdx = o.x - b.x, bdy = o.y - b.y;
+        const bd = Math.hypot(bdx, bdy);
+        if (bd < o.pullRadius && bd > 10) {
+          b.vx += (bdx / bd) * 900 * dt;
+          b.vy += (bdy / bd) * 900 * dt;
+        }
+      });
+      if (ship.invuln <= 0 && dist < o.radius + 10) {
+        damagePlayer(30);
+      }
+      if (o.y > H + 80) obstacles.splice(i, 1);
+    } else if (o.type === 'ASTEROID') {
+      o.x += o.vx * dt;
+      o.rot += 2.2 * dt;
+      if (o.x < 30 || o.x > W - 30) o.vx *= -1;
+
+      let broken = false;
+      for (let j = bullets.length - 1; j >= 0; j--) {
+        const b = bullets[j];
+        if (Math.hypot(b.x - o.x, b.y - o.y) < o.radius + 6) {
+          bullets.splice(j, 1);
+          o.hp -= b.dmg;
+          spawnExplosion(b.x, b.y, '#ffd166', 4, 110);
+          if (o.hp <= 0) {
+            spawnExplosion(o.x, o.y, '#ffd166', 24, 280);
+            spawnCoins(o.x, o.y, 4 + Math.floor(currentLevel / 2));
+            score += 150 * currentLevel;
+            AudioEngine.kill(combo);
+            obstacles.splice(i, 1);
+            broken = true;
+          }
+          break;
+        }
+      }
+      if (broken) continue;
+
+      if (ship.invuln <= 0 && Math.hypot(ship.x - o.x, ship.y - o.y) < o.radius + 12) {
+        obstacles.splice(i, 1);
+        damagePlayer(25);
+        continue;
+      }
+      if (o.y > H + 50) obstacles.splice(i, 1);
+    }
+  }
+
   for (let i = enemies.length - 1; i >= 0; i--) {
     const e = enemies[i];
     e.x += e.vx * dt;
@@ -452,34 +752,36 @@ function update(dt) {
     if (e.type === 'gunship') {
       e.shootTimer -= dt;
       if (e.shootTimer <= 0) {
-        e.shootTimer = 1.6;
+        e.shootTimer = 1.65;
         const ang = Math.atan2(ship.y - e.y, ship.x - e.x);
-        enemyBullets.push({ x: e.x, y: e.y + 12, vx: Math.cos(ang) * 260, vy: Math.sin(ang) * 260, col: '#ff0055' });
+        enemyBullets.push({
+          x: e.x, y: e.y + 12,
+          vx: Math.cos(ang) * 255, vy: Math.sin(ang) * 255,
+          phase: e.phase, color: e.color
+        });
       }
     }
 
-    // Bullet Hit
     let dead = false;
     for (let j = bullets.length - 1; j >= 0; j--) {
       const b = bullets[j];
       if (Math.hypot(b.x - e.x, b.y - e.y) < e.size + 8) {
         bullets.splice(j, 1);
-        e.hp -= b.dmg;
+        const mult = (ship.phase === e.phase) ? 1.5 : 1.0;
+        e.hp -= b.dmg * mult;
         spawnExplosion(b.x, b.y, '#ffffff', 4, 120);
         if (e.hp <= 0) {
-          score += 100 * currentLevel;
+          combo = Math.min(12, combo + 1);
+          maxCombo = Math.max(maxCombo, combo);
+          comboTimer = 3.5;
+          score += 100 * currentLevel * combo;
           levelKills++;
           shake = 9;
+          hitStop = 0.018;
           spawnExplosion(e.x, e.y, e.color, 20, 260);
+          spawnCoins(e.x, e.y, 1 + Math.floor(Math.random() * 2));
           addWave(e.x, e.y, 65, e.color);
-          AudioEngine.kill();
-
-          // Drop Weapon / Heal / Nova Powerup
-          if (Math.random() < 0.22) {
-            const pType = Math.random() < 0.55 ? 'WEAPON' : (Math.random() < 0.7 ? 'HEAL' : 'NOVA');
-            pickups.push({ x: e.x, y: e.y, type: pType, vy: 130 });
-          }
-
+          AudioEngine.kill(combo);
           enemies.splice(i, 1);
           dead = true;
         } else {
@@ -490,17 +792,26 @@ function update(dt) {
     }
     if (dead) continue;
 
-    // Collision with Ship
-    if (ship.invuln <= 0 && Math.hypot(ship.x - e.x, ship.y - e.y) < e.size + 14) {
+    const dPlayer = Math.hypot(ship.x - e.x, ship.y - e.y);
+
+    // Near-Miss Slow-Mo Bonus
+    if (!e.grazed && dPlayer < e.size + 34 && dPlayer >= e.size + 14) {
+      e.grazed = true;
+      slowMoTimer = 0.32;
+      score += 150;
+      addFloat(ship.x, ship.y - 26, 'NEAR MISS +150', PHASE_CYAN);
+      AudioEngine.nearMiss();
+    }
+
+    if (ship.invuln <= 0 && dPlayer < e.size + 14) {
       enemies.splice(i, 1);
-      damagePlayer(28);
+      damagePlayer(25);
       continue;
     }
 
     if (e.y > H + 40) enemies.splice(i, 1);
   }
 
-  // Update Boss
   if (boss) {
     boss.y += (boss.targetY - boss.y) * 3 * dt;
     boss.x += boss.dir * (110 + currentLevel * 12) * dt;
@@ -510,14 +821,16 @@ function update(dt) {
     if (boss.shootTimer <= 0) {
       boss.shootTimer = Math.max(0.55, 1.15 - currentLevel * 0.05);
       boss.pattern++;
+      const isCyan = boss.pattern % 2 === 0;
       const spread = 3 + Math.floor(currentLevel / 3);
       for (let s = 0; s < spread; s++) {
         const ang = Math.PI / 2 + (s - (spread - 1) / 2) * 0.24 + Math.sin(boss.pattern) * 0.15;
         enemyBullets.push({
           x: boss.x, y: boss.y + 30,
-          vx: Math.cos(ang) * (270 + currentLevel * 14),
-          vy: Math.sin(ang) * (270 + currentLevel * 14),
-          col: '#ffbe0b'
+          vx: Math.cos(ang) * (265 + currentLevel * 14),
+          vy: Math.sin(ang) * (265 + currentLevel * 14),
+          phase: isCyan ? 'CYAN' : 'RED',
+          color: isCyan ? PHASE_CYAN : PHASE_RED
         });
       }
     }
@@ -533,113 +846,140 @@ function update(dt) {
     }
 
     if (boss.hp <= 0) {
+      const rewardCoins = 20 + currentLevel * 6;
+      addCoins(rewardCoins);
       score += 1500 * currentLevel;
       shake = 32;
+      glitchTimer = 0.4;
       flashAlpha = 0.7;
       flashColor = '#ffd166';
       spawnExplosion(boss.x, boss.y, '#ffd166', 65, 450);
       addWave(boss.x, boss.y, 280, '#ffd166');
       boss = null;
       enemyBullets = [];
+      obstacles = [];
       AudioEngine.levelClear();
 
       if (currentLevel >= 10) {
+        saveVault();
         state = 'VICTORY';
       } else {
-        unlockedLevel = Math.max(unlockedLevel, currentLevel + 1);
-        localStorage.setItem('av_unlocked', unlockedLevel);
+        vault.unlockedLevel = Math.max(vault.unlockedLevel, currentLevel + 1);
+        saveVault();
         state = 'LEVELCLEAR';
       }
     }
   }
 
-  // Update Enemy Bullets
   for (let i = enemyBullets.length - 1; i >= 0; i--) {
     const eb = enemyBullets[i];
     eb.x += eb.vx * dt;
     eb.y += eb.vy * dt;
-    if (ship.invuln <= 0 && Math.hypot(ship.x - eb.x, ship.y - eb.y) < 14) {
-      enemyBullets.splice(i, 1);
-      damagePlayer(20);
-      continue;
+    if (Math.hypot(ship.x - eb.x, ship.y - eb.y) < 16) {
+      if (ship.phase === eb.phase) {
+        score += 50;
+        addCoins(1);
+        ship.hp = Math.min(ship.maxHp, ship.hp + 2);
+        spawnExplosion(eb.x, eb.y, eb.color, 6, 120);
+        AudioEngine.absorb();
+        enemyBullets.splice(i, 1);
+        continue;
+      } else if (ship.invuln <= 0) {
+        enemyBullets.splice(i, 1);
+        damagePlayer(18);
+        continue;
+      }
     }
     if (eb.y > H + 20 || eb.x < -20 || eb.x > W + 20) enemyBullets.splice(i, 1);
   }
 
-  // Update Pickups
-  for (let i = pickups.length - 1; i >= 0; i--) {
-    const p = pickups[i];
-    p.y += p.vy * dt;
-    if (Math.hypot(ship.x - p.x, ship.y - p.y) < 28) {
-      AudioEngine.powerup();
-      if (p.type === 'WEAPON') {
-        ship.weaponLevel = Math.min(4, ship.weaponLevel + 1);
-        score += 250;
-        addFloat(ship.x, ship.y - 25, `⚡ WEAPON LVL ${ship.weaponLevel}!`, '#00f5d4');
-      } else if (p.type === 'HEAL') {
-        ship.hp = Math.min(100, ship.hp + 35);
-        addFloat(ship.x, ship.y - 25, '+35 ARMOR REPAIR', '#06d6a0');
-      } else {
-        ship.novaCharges = Math.min(3, ship.novaCharges + 1);
-        addFloat(ship.x, ship.y - 25, '+1 NOVA BOMB', '#ffd166');
-      }
-      pickups.splice(i, 1);
+  const magnetRange = 75 + vault.shop.magnet * 45;
+  for (let i = coinDrops.length - 1; i >= 0; i--) {
+    const c = coinDrops[i];
+    c.spin += 7 * dt;
+    const dx = ship.x - c.x;
+    const dy = ship.y - c.y;
+    const dist = Math.hypot(dx, dy);
+
+    if (dist < magnetRange) {
+      c.vx += (dx / dist) * 1400 * dt;
+      c.vy += (dy / dist) * 1400 * dt;
+    } else {
+      c.vx *= 0.94;
+      c.vy += 160 * dt;
+    }
+    c.x += c.vx * dt;
+    c.y += c.vy * dt;
+
+    if (dist < 24) {
+      addCoins(1);
+      score += 25;
+      AudioEngine.coin();
+      coinDrops.splice(i, 1);
       continue;
     }
-    if (p.y > H + 30) pickups.splice(i, 1);
+    if (c.y > H + 30) coinDrops.splice(i, 1);
   }
 
-  if (score > bestScore) {
-    bestScore = score;
-    localStorage.setItem('av_best', bestScore);
+  if (score > vault.bestScore) {
+    vault.bestScore = score;
+    saveVault();
   }
 }
 
 function damagePlayer(dmg) {
   ship.hp -= dmg;
   ship.invuln = 0.85;
+  combo = 1;
   shake = 22;
+  glitchTimer = 0.25;
   flashAlpha = 0.45;
-  flashColor = '#ff0055';
-  spawnExplosion(ship.x, ship.y, '#ff0055', 28, 300);
+  flashColor = PHASE_RED;
+  spawnExplosion(ship.x, ship.y, PHASE_RED, 28, 300);
   AudioEngine.damage();
 
   if (ship.hp <= 0) {
     ship.hp = 0;
+    saveVault();
     state = 'OVER';
-    spawnExplosion(ship.x, ship.y, '#ff0055', 60, 420);
+    spawnExplosion(ship.x, ship.y, PHASE_RED, 60, 420);
   }
 }
 
 // --- RENDER ---
-function drawGrid(lvl) {
-  ctx.strokeStyle = `${lvl.primary}18`;
+function drawCyberGrid(lvl) {
+  ctx.strokeStyle = `${lvl.bg1}aa`;
   ctx.lineWidth = 1;
   const cols = 14;
   for (let i = 0; i <= cols; i++) {
     const x = (i / cols) * W;
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
   }
-  const offset = (time * 90) % 60;
+  const offset = (time * 95) % 60;
   for (let y = offset; y < H; y += 60) {
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
   }
 }
 
-function drawShip(x, y, col) {
+function drawShip(x, y) {
+  const phaseCol = ship.phase === 'CYAN' ? PHASE_CYAN : PHASE_RED;
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(ship.tilt);
 
-  // Engine Flame
-  ctx.fillStyle = '#ffd166';
+  ctx.strokeStyle = phaseCol;
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.arc(0, 0, 24 + Math.sin(time * 10) * 2, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.fillStyle = phaseCol;
   ctx.beginPath();
   ctx.moveTo(-7, 16);
   ctx.lineTo(0, 28 + Math.random() * 12);
   ctx.lineTo(7, 16);
   ctx.fill();
 
-  // Sleek Fighter Hull
   ctx.fillStyle = '#ffffff';
   ctx.beginPath();
   ctx.moveTo(0, -22);
@@ -649,8 +989,7 @@ function drawShip(x, y, col) {
   ctx.closePath();
   ctx.fill();
 
-  // Wing Neon Trim
-  ctx.strokeStyle = col;
+  ctx.strokeStyle = phaseCol;
   ctx.lineWidth = 2.5;
   ctx.stroke();
   ctx.restore();
@@ -658,6 +997,7 @@ function drawShip(x, y, col) {
 
 function draw() {
   const lvl = getLvl();
+  const isOverdrive = combo >= 5 && state === 'PLAY';
   ctx.save();
 
   const bg = ctx.createLinearGradient(0, 0, 0, H);
@@ -670,39 +1010,70 @@ function draw() {
     ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
   }
 
-  drawGrid(lvl);
+  drawCyberGrid(lvl);
 
   stars.forEach(s => {
-    ctx.fillStyle = 'rgba(210, 235, 255, 0.55)';
-    ctx.fillRect(s.x, s.y, s.size, s.size * 2.5);
+    ctx.fillStyle = 'rgba(210, 235, 255, 0.52)';
+    ctx.fillRect(s.x, s.y, s.size, s.size * (isOverdrive ? 4.5 : 2.5));
   });
 
   ctx.globalCompositeOperation = 'lighter';
 
-  // Pickups
-  pickups.forEach(p => {
-    const col = p.type === 'WEAPON' ? '#00f5d4' : (p.type === 'HEAL' ? '#06d6a0' : '#ffd166');
-    ctx.fillStyle = col;
-    ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#03040a';
-    ctx.font = '900 11px system-ui';
-    ctx.textAlign = 'center';
-    ctx.fillText(p.type[0], p.x, p.y + 4);
+  obstacles.forEach(o => {
+    if (o.type === 'GATE') {
+      ctx.strokeStyle = o.color;
+      ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.moveTo(0, o.y); ctx.lineTo(W, o.y); ctx.stroke();
+      ctx.fillStyle = o.color;
+      ctx.font = '800 11px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText(`${o.phase} POLARITY GATE — MATCH COLOR TO ABSORB`, W / 2, o.y - 8);
+    } else if (o.type === 'BLACKHOLE') {
+      const grad = ctx.createRadialGradient(o.x, o.y, 4, o.x, o.y, o.pullRadius * 0.65);
+      grad.addColorStop(0, '#000000');
+      grad.addColorStop(0.35, '#9b5de5');
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath(); ctx.arc(o.x, o.y, o.pullRadius * 0.65, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#c77dff';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(o.x, o.y, o.radius + Math.sin(time * 8) * 3, 0, Math.PI * 2); ctx.stroke();
+    } else if (o.type === 'ASTEROID') {
+      ctx.save();
+      ctx.translate(o.x, o.y);
+      ctx.rotate(o.rot);
+      ctx.strokeStyle = '#ffd166';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      for (let k = 0; k < 7; k++) {
+        const a = (k / 7) * Math.PI * 2;
+        const rad = o.radius * (0.82 + (k % 2) * 0.25);
+        if (k === 0) ctx.moveTo(Math.cos(a) * rad, Math.sin(a) * rad);
+        else ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
+      }
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+    }
   });
 
-  // Bullets
+  coinDrops.forEach(c => {
+    ctx.fillStyle = '#ffd166';
+    ctx.beginPath();
+    ctx.ellipse(c.x, c.y, 7 * Math.abs(Math.cos(c.spin)) + 2, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
   bullets.forEach(b => {
     ctx.fillStyle = b.col;
     ctx.fillRect(b.x - 2.5, b.y - 12, 5, 20);
   });
 
-  // Enemy Bullets
   enemyBullets.forEach(eb => {
-    ctx.fillStyle = eb.col;
-    ctx.beginPath(); ctx.arc(eb.x, eb.y, 5.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = eb.color;
+    ctx.beginPath(); ctx.arc(eb.x, eb.y, 6, 0, Math.PI * 2); ctx.fill();
   });
 
-  // Enemies
   enemies.forEach(e => {
     ctx.save();
     ctx.translate(e.x, e.y);
@@ -717,11 +1088,10 @@ function draw() {
     ctx.restore();
   });
 
-  // Dreadnought Boss
   if (boss) {
     ctx.save();
     ctx.translate(boss.x, boss.y);
-    ctx.fillStyle = '#ff0055';
+    ctx.fillStyle = '#9b5de5';
     ctx.beginPath();
     ctx.moveTo(0, 48);
     ctx.lineTo(68, -10);
@@ -736,10 +1106,26 @@ function draw() {
     ctx.restore();
   }
 
-  // Player Ship
   if (state === 'PLAY' || state === 'LEVELCLEAR') {
+    for (let i = 0; i < ship.trail.length; i++) {
+      const t = ship.trail[i];
+      const ratio = i / ship.trail.length;
+      ctx.fillStyle = t.col;
+      ctx.globalAlpha = ratio * 0.45;
+      ctx.beginPath(); ctx.arc(t.x, t.y, 7 * ratio, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // Wingman Drone
+    if (vault.shop.cannon >= 3) {
+      const wx = ship.x + Math.cos(time * 4) * 38;
+      const wy = ship.y + Math.sin(time * 4) * 16;
+      ctx.fillStyle = '#ffd166';
+      ctx.beginPath(); ctx.arc(wx, wy, 5.5, 0, Math.PI * 2); ctx.fill();
+    }
+
     if (ship.invuln <= 0 || Math.floor(time * 20) % 2 === 0) {
-      drawShip(ship.x, ship.y, lvl.primary);
+      drawShip(ship.x, ship.y);
     }
   }
 
@@ -758,6 +1144,15 @@ function draw() {
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = 1;
 
+  if (glitchTimer > 0) {
+    for (let g = 0; g < 4; g++) {
+      const gy = Math.random() * H;
+      const gh = 4 + Math.random() * 14;
+      ctx.fillStyle = g % 2 === 0 ? 'rgba(0, 245, 212, 0.25)' : 'rgba(255, 0, 85, 0.25)';
+      ctx.fillRect((Math.random() - 0.5) * 32, gy, W, gh);
+    }
+  }
+
   floatTexts.forEach(f => {
     ctx.fillStyle = f.color;
     ctx.globalAlpha = Math.max(0, f.life);
@@ -769,38 +1164,59 @@ function draw() {
 
   // --- HUD ---
   if (state === 'PLAY') {
-    // Top Left: Score & Level
     ctx.textAlign = 'left';
     ctx.fillStyle = '#ffffff';
-    ctx.font = '900 24px system-ui';
-    ctx.fillText(score.toLocaleString(), 20, 36);
+    ctx.font = '900 22px system-ui';
+    ctx.fillText(score.toLocaleString(), 18, 34);
 
-    ctx.fillStyle = lvl.primary;
-    ctx.font = '800 13px system-ui';
-    ctx.fillText(`LEVEL ${currentLevel}/10 • ${lvl.name}`, 20, 56);
+    ctx.fillStyle = '#ffd166';
+    ctx.font = '800 14px system-ui';
+    ctx.fillText(`🏦 VAULT: ◈ ${vault.coins}`, 18, 54);
 
-    // Level Progress Bar
-    const pw = 150;
+    ctx.fillStyle = PHASE_CYAN;
+    ctx.font = '700 12px system-ui';
+    ctx.fillText(`LVL ${currentLevel}/10 • ${lvl.name}`, 18, 72);
+
     ctx.fillStyle = 'rgba(255,255,255,0.15)';
-    ctx.fillRect(20, 64, pw, 6);
-    ctx.fillStyle = boss ? '#ff0055' : lvl.primary;
+    ctx.fillRect(18, 79, 140, 5);
+    ctx.fillStyle = boss ? PHASE_RED : PHASE_CYAN;
     const prog = boss ? (boss.hp / boss.maxHp) : Math.min(1, levelKills / lvl.target);
-    ctx.fillRect(20, 64, pw * prog, 6);
+    ctx.fillRect(18, 79, 140 * prog, 5);
 
-    // Top Right: Armor HP & Nova Bombs
     ctx.textAlign = 'right';
     ctx.fillStyle = '#ffffff';
     ctx.font = '800 13px system-ui';
-    ctx.fillText(`ARMOR ${ship.hp}%`, W - 20, 32);
+    ctx.fillText(`ARMOR ${Math.ceil((ship.hp / ship.maxHp) * 100)}%`, W - 18, 32);
 
     ctx.fillStyle = 'rgba(255,255,255,0.15)';
-    ctx.fillRect(W - 150, 38, 130, 8);
-    ctx.fillStyle = ship.hp > 35 ? '#06d6a0' : '#ff0055';
-    ctx.fillRect(W - 150, 38, 130 * (ship.hp / 100), 8);
+    ctx.fillRect(W - 148, 38, 130, 8);
+    ctx.fillStyle = ship.hp > ship.maxHp * 0.35 ? '#06d6a0' : PHASE_RED;
+    ctx.fillRect(W - 148, 38, 130 * (ship.hp / ship.maxHp), 8);
 
     ctx.fillStyle = '#ffd166';
-    ctx.font = '800 13px system-ui';
-    ctx.fillText(`NOVA BOMBS: ${'⚡'.repeat(ship.novaCharges)} (2x TAP / SPACE)`, W - 20, 64);
+    ctx.font = '800 12px system-ui';
+    ctx.fillText(`NOVA: ${'⚡'.repeat(ship.novaCharges)} (2x TAP/SPACE)`, W - 18, 64);
+
+    if (combo > 1) {
+      ctx.fillStyle = isOverdrive ? '#ffd166' : PHASE_CYAN;
+      ctx.font = '900 16px system-ui';
+      ctx.fillText(isOverdrive ? `⚡ ${combo}x OVERDRIVE` : `${combo}x COMBO`, W - 18, 86);
+    }
+
+    const pw = 230, ph = 38;
+    const px = W / 2 - pw / 2, py = H - 52;
+    phaseBtnRect = { x: px, y: py, w: pw, h: ph };
+    const pCol = ship.phase === 'CYAN' ? PHASE_CYAN : PHASE_RED;
+    ctx.fillStyle = 'rgba(5, 8, 18, 0.85)';
+    ctx.strokeStyle = pCol;
+    ctx.lineWidth = 2;
+    ctx.fillRect(px, py, pw, ph);
+    ctx.strokeRect(px, py, pw, ph);
+
+    ctx.textAlign = 'center';
+    ctx.fillStyle = pCol;
+    ctx.font = '900 13px system-ui';
+    ctx.fillText(`PHASE: ${ship.phase} (TAP / R-CLICK / E)`, W / 2, py + 24);
   }
 
   if (flashAlpha > 0) {
@@ -810,99 +1226,163 @@ function draw() {
     ctx.globalAlpha = 1;
   }
 
-  // --- MENU WITH 10-LEVEL SELECTOR ---
+  // --- MENU WITH COIN VAULT + SHIP ARMORY + COIN LEVEL UNLOCK ---
   if (state === 'MENU') {
-    ctx.fillStyle = 'rgba(3, 4, 10, 0.82)';
+    ctx.fillStyle = 'rgba(2, 3, 8, 0.88)';
     ctx.fillRect(0, 0, W, H);
     ctx.textAlign = 'center';
 
-    ctx.fillStyle = '#00f5d4';
-    ctx.font = '900 40px system-ui';
-    ctx.fillText('AETHER VANGUARD', W / 2, H * 0.18);
+    ctx.fillStyle = PHASE_CYAN;
+    ctx.font = '900 34px system-ui';
+    ctx.fillText('AETHER POLARITY', W / 2, H * 0.09);
+
+    const vw = Math.min(460, W - 40);
+    ctx.fillStyle = 'rgba(255, 209, 102, 0.1)';
+    ctx.strokeStyle = '#ffd166';
+    ctx.lineWidth = 1.5;
+    ctx.fillRect(W / 2 - vw / 2, H * 0.09 + 14, vw, 34);
+    ctx.strokeRect(W / 2 - vw / 2, H * 0.09 + 14, vw, 34);
 
     ctx.fillStyle = '#ffd166';
-    ctx.font = '800 14px system-ui';
-    ctx.fillText(`10-LEVEL GALACTIC CAMPAIGN  •  BEST SCORE: ${bestScore.toLocaleString()}`, W / 2, H * 0.18 + 28);
+    ctx.font = '900 14px system-ui';
+    ctx.fillText(`🏦 COIN VAULT: ◈ ${vault.coins}  (LIFETIME: ${vault.totalEarned})  •  BEST: ${vault.bestScore.toLocaleString()}`, W / 2, H * 0.09 + 36);
 
-    ctx.fillStyle = '#cbd5e1';
-    ctx.font = '500 14px system-ui';
-    ctx.fillText('DRAG / ARROWS to Fly  •  DOUBLE-TAP / SPACE for Nova Bomb', W / 2, H * 0.18 + 56);
+    if (statusTimer > 0) {
+      ctx.fillStyle = '#06d6a0';
+      ctx.font = '800 13px system-ui';
+      ctx.fillText(statusMsg, W / 2, H * 0.09 + 66);
+    } else {
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = '500 12px system-ui';
+      ctx.fillText('Spend Vault Coins to Upgrade Ship Systems OR Unlock Higher Levels directly!', W / 2, H * 0.09 + 66);
+    }
 
-    // 10-Level Grid (2 Rows x 5 Columns)
+    const shopItems = [
+      { key: 'cannon', label: 'CANNON TIER', lvl: vault.shop.cannon, max: 5, cost: vault.shop.cannon * 25 },
+      { key: 'magnet', label: 'COIN MAGNET', lvl: vault.shop.magnet, max: 5, cost: vault.shop.magnet * 20 },
+      { key: 'armor',  label: 'HULL ARMOR',  lvl: vault.shop.armor,  max: 5, cost: vault.shop.armor * 20 },
+      { key: 'nova',   label: 'NOVA BOMBS',  lvl: vault.shop.nova,   max: 4, cost: vault.shop.nova * 35 }
+    ];
+
+    shopBtns = [];
+    const sw = Math.min(145, (W - 50) / 4 - 8);
+    const sh = 62;
+    const sGap = 10;
+    const sTotalW = 4 * sw + 3 * sGap;
+    const sStartX = W / 2 - sTotalW / 2;
+    const sStartY = H * 0.24;
+
+    shopItems.forEach((item, idx) => {
+      const bx = sStartX + idx * (sw + sGap);
+      const by = sStartY;
+      const maxed = item.lvl >= item.max;
+      const canBuy = !maxed && vault.coins >= item.cost;
+      shopBtns.push({ x: bx, y: by, w: sw, h: sh, ...item });
+
+      ctx.fillStyle = canBuy ? 'rgba(255, 209, 102, 0.14)' : 'rgba(255, 255, 255, 0.04)';
+      ctx.strokeStyle = maxed ? '#06d6a0' : (canBuy ? '#ffd166' : 'rgba(255,255,255,0.2)');
+      ctx.lineWidth = 1.8;
+      ctx.fillRect(bx, by, sw, sh);
+      ctx.strokeRect(bx, by, sw, sh);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '800 11px system-ui';
+      ctx.fillText(`${item.label} (L${item.lvl})`, bx + sw / 2, by + 23);
+
+      ctx.fillStyle = maxed ? '#06d6a0' : (canBuy ? '#ffd166' : '#8d99ae');
+      ctx.font = '800 12px system-ui';
+      ctx.fillText(maxed ? 'MAXED' : `LVL UP: ${item.cost} ◈`, bx + sw / 2, by + 45);
+    });
+
     levelBtns = [];
     const cols = 5;
-    const bw = Math.min(115, (W - 60) / cols - 10);
+    const bw = Math.min(118, (W - 60) / cols - 10);
     const bh = 68;
-    const gap = 12;
+    const gap = 10;
     const totalW = cols * bw + (cols - 1) * gap;
     const startX = W / 2 - totalW / 2;
-    const startY = H * 0.36;
+    const startY = sStartY + sh + 34;
 
     LEVELS.forEach((l, idx) => {
       const r = Math.floor(idx / cols);
       const c = idx % cols;
       const bx = startX + c * (bw + gap);
       const by = startY + r * (bh + gap);
-      const unlocked = l.num <= unlockedLevel;
-      levelBtns.push({ x: bx, y: by, w: bw, h: bh, lvl: l.num });
+      const unlocked = l.num <= vault.unlockedLevel;
+      const nextUnlockable = l.num === vault.unlockedLevel + 1;
+      const canUnlock = nextUnlockable && vault.coins >= l.unlockCost;
+      levelBtns.push({ x: bx, y: by, w: bw, h: bh, lvl: l.num, cost: l.unlockCost });
 
-      ctx.fillStyle = unlocked ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.02)';
-      ctx.strokeStyle = unlocked ? l.primary : 'rgba(255,255,255,0.18)';
+      ctx.fillStyle = unlocked ? 'rgba(0, 245, 212, 0.09)' : (canUnlock ? 'rgba(255, 209, 102, 0.12)' : 'rgba(255,255,255,0.02)');
+      ctx.strokeStyle = unlocked ? PHASE_CYAN : (canUnlock ? '#ffd166' : 'rgba(255,255,255,0.16)');
       ctx.lineWidth = 2;
       ctx.fillRect(bx, by, bw, bh);
       ctx.strokeRect(bx, by, bw, bh);
 
-      ctx.fillStyle = unlocked ? l.primary : 'rgba(255,255,255,0.3)';
-      ctx.font = '900 18px system-ui';
-      ctx.fillText(unlocked ? `LVL ${l.num}` : `🔒 ${l.num}`, bx + bw / 2, by + 30);
+      ctx.fillStyle = unlocked ? PHASE_CYAN : (canUnlock ? '#ffd166' : 'rgba(255,255,255,0.35)');
+      ctx.font = '900 16px system-ui';
+      ctx.fillText(unlocked ? `LVL ${l.num}` : `🔒 LVL ${l.num}`, bx + bw / 2, by + 26);
 
-      ctx.fillStyle = unlocked ? '#ffffff' : 'rgba(255,255,255,0.25)';
+      ctx.fillStyle = unlocked ? '#ffffff' : (canUnlock ? '#ffd166' : 'rgba(255,255,255,0.35)');
       ctx.font = '700 10px system-ui';
-      ctx.fillText(l.name.split(' ')[0], bx + bw / 2, by + 50);
+      if (unlocked) {
+        ctx.fillText('PLAY NOW', bx + bw / 2, by + 48);
+      } else if (nextUnlockable) {
+        ctx.fillText(`UNLOCK: ${l.unlockCost} ◈`, bx + bw / 2, by + 48);
+      } else {
+        ctx.fillText(`${l.unlockCost} ◈`, bx + bw / 2, by + 48);
+      }
     });
 
     const pulse = 0.55 + Math.sin(time * 5) * 0.45;
     ctx.fillStyle = `rgba(0, 245, 212, ${pulse})`;
-    ctx.font = '800 17px system-ui';
-    ctx.fillText('CLICK ANY UNLOCKED LEVEL TO LAUNCH', W / 2, startY + 2 * (bh + gap) + 42);
+    ctx.font = '800 15px system-ui';
+    ctx.fillText('CLICK UNLOCKED LEVEL TO PLAY  •  CLICK LOCKED LEVEL TO UNLOCK WITH COINS', W / 2, startY + 2 * (bh + gap) + 36);
   }
 
   // --- LEVEL CLEAR / OVER / VICTORY ---
   if (state === 'LEVELCLEAR' || state === 'OVER' || state === 'VICTORY') {
-    ctx.fillStyle = 'rgba(3, 4, 10, 0.82)';
+    ctx.fillStyle = 'rgba(2, 3, 8, 0.86)';
     ctx.fillRect(0, 0, W, H);
     ctx.textAlign = 'center';
 
     if (state === 'LEVELCLEAR') {
       ctx.fillStyle = '#06d6a0';
       ctx.font = '900 38px system-ui';
-      ctx.fillText(`LEVEL ${currentLevel} CLEARED!`, W / 2, H / 2 - 40);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '700 18px system-ui';
-      ctx.fillText(`SCORE: ${score.toLocaleString()}  •  +1 NOVA BOMB RESTORED`, W / 2, H / 2 + 5);
+      ctx.fillText(`LEVEL ${currentLevel} CLEARED!`, W / 2, H / 2 - 42);
       ctx.fillStyle = '#ffd166';
+      ctx.font = '800 18px system-ui';
+      ctx.fillText(`🏦 COIN VAULT: ◈ ${vault.coins}  •  SCORE: ${score.toLocaleString()}`, W / 2, H / 2 + 4);
+      ctx.fillStyle = PHASE_CYAN;
       ctx.font = '800 17px system-ui';
-      ctx.fillText(`TAP OR PRESS SPACE FOR LEVEL ${currentLevel + 1}`, W / 2, H / 2 + 55);
-    } else if (state === 'VICTORY') {
-      ctx.fillStyle = '#ffd166';
-      ctx.font = '900 40px system-ui';
-      ctx.fillText('ALL 10 LEVELS CONQUERED!', W / 2, H / 2 - 40);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = '800 24px system-ui';
-      ctx.fillText(`FINAL SCORE: ${score.toLocaleString()}`, W / 2, H / 2 + 8);
-      ctx.fillStyle = '#00f5d4';
-      ctx.font = '700 16px system-ui';
-      ctx.fillText('TAP TO RETURN TO MISSION MAP', W / 2, H / 2 + 55);
+      ctx.fillText(`TAP OR PRESS SPACE FOR LEVEL ${currentLevel + 1}`, W / 2, H / 2 + 54);
     } else {
-      ctx.fillStyle = '#ff0055';
-      ctx.font = '900 40px system-ui';
-      ctx.fillText('SHIP DESTROYED', W / 2, H / 2 - 40);
+      const isWin = state === 'VICTORY';
+      ctx.fillStyle = isWin ? '#ffd166' : PHASE_RED;
+      ctx.font = '900 38px system-ui';
+      ctx.fillText(isWin ? 'ALL 10 LEVELS CONQUERED!' : 'SHIP DESTROYED', W / 2, H / 2 - 80);
+
       ctx.fillStyle = '#ffffff';
       ctx.font = '800 22px system-ui';
-      ctx.fillText(`REACHED LEVEL ${currentLevel}  •  SCORE: ${score.toLocaleString()}`, W / 2, H / 2 + 6);
-      ctx.fillStyle = '#00f5d4';
+      ctx.fillText(`SCORE: ${score.toLocaleString()}  •  🏦 VAULT: ◈ ${vault.coins}`, W / 2, H / 2 - 36);
+
+      // Copy Score Card Button
+      const bw = 240, bh = 40;
+      const bx = W / 2 - bw / 2, by = H / 2 - 6;
+      shareBtnRect = { x: bx, y: by, w: bw, h: bh };
+      ctx.fillStyle = copiedTimer > 0 ? '#06d6a0' : 'rgba(255,255,255,0.12)';
+      ctx.strokeStyle = PHASE_CYAN;
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(bx, by, bw, bh);
+      ctx.strokeRect(bx, by, bw, bh);
+
+      ctx.fillStyle = copiedTimer > 0 ? '#020308' : PHASE_CYAN;
+      ctx.font = '800 14px system-ui';
+      ctx.fillText(copiedTimer > 0 ? '✓ SCORE CARD COPIED!' : '📋 COPY SCORE CARD', W / 2, by + 25);
+
+      ctx.fillStyle = PHASE_CYAN;
       ctx.font = '700 16px system-ui';
-      ctx.fillText('TAP OR PRESS SPACE FOR LEVEL SELECT', W / 2, H / 2 + 55);
+      ctx.fillText('TAP ANYWHERE ELSE FOR ARMORY & LEVELS', W / 2, H / 2 + 72);
     }
   }
 
@@ -910,9 +1390,9 @@ function draw() {
 }
 
 function loop(now) {
-  const dt = Math.min(0.05, (now - lastTime) / 1000);
+  const rawDt = Math.min(0.05, (now - lastTime) / 1000);
   lastTime = now;
-  update(dt);
+  update(rawDt);
   draw();
   requestAnimationFrame(loop);
 }
